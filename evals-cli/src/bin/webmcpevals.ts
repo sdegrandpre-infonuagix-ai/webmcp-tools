@@ -15,7 +15,7 @@ import minimist from "minimist";
 import open from "open";
 import { renderWebmcpReport } from "../report/report.js";
 import { executeInBrowserEvals, listToolsFromPage } from "../evaluator/index.js";
-import { sortObjectKeys } from "../utils.js";
+import { sortObjectKeys, cleanOldReports } from "../utils.js";
 
 dotenv.config();
 
@@ -130,6 +130,7 @@ const report = renderWebmcpReport(config, finalResults);
 
 const reportName = `report-${Date.now()}.html`;
 
+await cleanOldReports();
 await writeFile(reportName, report);
 console.log(`Report saved to ${reportName}`);
 
