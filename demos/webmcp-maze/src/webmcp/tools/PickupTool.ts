@@ -19,10 +19,6 @@ export function createPickupTool(game: Game): ModelContextTool {
     description:
       "Pick up a collectible item (key or dynamite) from your current cell. " +
       "You can only carry one item at a time. Drop your current item first if needed.",
-    inputSchema: {
-      type: "object",
-      properties: {},
-    },
     async execute() {
       const pos = game.player.position;
       const collectible = game.board.getCollectible(pos);

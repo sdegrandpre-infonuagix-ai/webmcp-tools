@@ -21,10 +21,6 @@ export function createLookTool(game: Game): ModelContextTool {
       "Look around the current cell. Returns the player's position, " +
       "which directions are open, any blockers or collectibles nearby, " +
       "your current inventory, and whether the exit is here.",
-    inputSchema: {
-      type: "object",
-      properties: {},
-    },
     annotations: { readOnlyHint: true },
     async execute() {
       const pos = game.player.position;

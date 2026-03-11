@@ -20,7 +20,6 @@ export function createStartGameTool(game: Game): ModelContextTool {
     description:
       "Start a new maze game. Generates a fresh maze and places the player " +
       "at the top-left corner. The goal is to reach the bottom-right exit.",
-
     async execute() {
       game.newGame();
       game.setState(new GameplayState(game));

@@ -19,10 +19,6 @@ export function createDropTool(game: Game): ModelContextTool {
     description:
       "Drop your currently held item at your current location. " +
       "The item will remain on this cell and can be picked up again later.",
-    inputSchema: {
-      type: "object",
-      properties: {},
-    },
     async execute() {
       if (game.player.inventory === null) {
         return JSON.stringify({
