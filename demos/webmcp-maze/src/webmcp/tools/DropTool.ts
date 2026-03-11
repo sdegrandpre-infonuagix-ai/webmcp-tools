@@ -21,19 +21,19 @@ export function createDropTool(game: Game): ModelContextTool {
       "The item will remain on this cell and can be picked up again later.",
     async execute() {
       if (game.player.inventory === null) {
-        return JSON.stringify({
+        return {
           success: false,
           reason: "You are not carrying any item.",
-        });
+        };
       }
 
       const pos = game.player.position;
       if (game.board.getCollectible(pos)) {
-        return JSON.stringify({
+        return {
           success: false,
           reason:
             "There is already an item on this cell. Move to an empty cell first.",
-        });
+        };
       }
 
       const item = game.player.drop()!;
@@ -44,12 +44,12 @@ export function createDropTool(game: Game): ModelContextTool {
       game.renderer.updateCollectibles(game.board);
       game.gameplayState?.updateInventory();
 
-      return JSON.stringify({
+      return {
         success: true,
         item,
         message: `Dropped: ${collectibleDisplayName(item)}`,
         position: { row: pos.row, col: pos.col },
-      });
+      };
     },
   };
 }

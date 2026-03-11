@@ -126,14 +126,14 @@ export function createEvalTool(): ModelContextTool {
       },
       required: ["code"],
     },
-    execute(input: Record<string, unknown>): Promise<string> {
+    execute(input: Record<string, unknown>): Promise<object> {
       const code = input.code as string;
 
       console.group("[eval_code] LLM submitted code");
       console.log(code);
       console.groupEnd();
 
-      return new Promise<string>((resolve) => {
+      return new Promise<object>((resolve) => {
         const blob = new Blob([EVAL_WORKER_SCRIPT], {
           type: "application/javascript",
         });
@@ -143,7 +143,7 @@ export function createEvalTool(): ModelContextTool {
         let settled = false;
 
         /** Settles the promise and cleans up the worker and object URL. */
-        const finish = (response: string): void => {
+        const finish = (response: object): void => {
           if (settled) return;
           settled = true;
           clearTimeout(timeoutId);
@@ -155,10 +155,10 @@ export function createEvalTool(): ModelContextTool {
         const timeoutId = setTimeout(() => {
           console.error(`[eval_code] timed out after ${EVAL_TIMEOUT_MS}ms`);
           finish(
-            JSON.stringify({
+            {
               success: false,
               error: `Execution timed out after ${EVAL_TIMEOUT_MS}ms`,
-            }),
+            },
           );
         }, EVAL_TIMEOUT_MS);
 
@@ -175,11 +175,11 @@ export function createEvalTool(): ModelContextTool {
           if (msg.type === "done") {
             console.log("[eval_code] result:", msg.result);
             finish(
-              JSON.stringify({ success: true, result: msg.result ?? null }),
+              { success: true, result: msg.result ?? null },
             );
           } else if (msg.type === "error") {
             console.error("[eval_code] error:", msg.error);
-            finish(JSON.stringify({ success: false, error: msg.error }));
+            finish({ success: false, error: msg.error });
           } else if (msg.type === "toolCall") {
             // Bridge the worker's tool call to the main thread's gameTools.
             const { id, name, args } = msg as Required<
@@ -205,10 +205,10 @@ export function createEvalTool(): ModelContextTool {
         worker.onerror = (e: ErrorEvent): void => {
           console.error("[eval_code] worker error:", e.message);
           finish(
-            JSON.stringify({
+            {
               success: false,
               error: e.message ?? "Worker error",
-            }),
+            },
           );
         };
 

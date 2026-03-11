@@ -41,7 +41,7 @@ export function createLookTool(game: Game): ModelContextTool {
         }
       }
 
-      return JSON.stringify({
+      return {
         position: { row: pos.row, col: pos.col },
         openDirections,
         blockedDirections:
@@ -56,7 +56,7 @@ export function createLookTool(game: Game): ModelContextTool {
           : "unknown — not yet visible through fog of war",
         mazeSize: { rows: game.board.rows, cols: game.board.cols },
         moveCount: game.player.moveCount,
-      });
+      };
     },
   };
 }

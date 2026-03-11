@@ -37,10 +37,10 @@ export function createMoveTool(game: Game): ModelContextTool {
       const dir = input.direction as string;
 
       if (!VALID_DIRECTIONS.has(dir as Direction)) {
-        return JSON.stringify({
+        return {
           success: false,
           reason: `Invalid direction: "${dir}". Use north, south, east, or west.`,
-        });
+        };
       }
 
       const moved = game.player.move(dir as Direction, game.board);
@@ -53,7 +53,7 @@ export function createMoveTool(game: Game): ModelContextTool {
         game.gameplayState?.updateExploredCount();
 
         const atExit = game.board.isExit(game.player.position);
-        return JSON.stringify({
+        return {
           success: true,
           position: {
             row: game.player.position.row,
@@ -61,7 +61,7 @@ export function createMoveTool(game: Game): ModelContextTool {
           },
           atExit,
           moveCount: game.player.moveCount,
-        });
+        };
       }
 
       // Check if blocked by a blocker (not a wall)
@@ -70,17 +70,17 @@ export function createMoveTool(game: Game): ModelContextTool {
         dir as Direction,
       );
       if (blocker) {
-        return JSON.stringify({
+        return {
           success: false,
           reason: `A ${blockerDisplayName(blocker.type)} blocks the ${dir} direction. Use an item to clear it.`,
           blocker: blocker.type,
-        });
+        };
       }
 
-      return JSON.stringify({
+      return {
         success: false,
         reason: `There is a wall blocking the ${dir} direction.`,
-      });
+      };
     },
   };
 }

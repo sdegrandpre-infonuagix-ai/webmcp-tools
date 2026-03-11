@@ -24,18 +24,18 @@ export function createPickupTool(game: Game): ModelContextTool {
       const collectible = game.board.getCollectible(pos);
 
       if (!collectible) {
-        return JSON.stringify({
+        return {
           success: false,
           reason: "There is no item to pick up at your current location.",
-        });
+        };
       }
 
       if (game.player.inventory !== null) {
-        return JSON.stringify({
+        return {
           success: false,
           reason: `Your hands are full. You are already carrying: ${collectibleDisplayName(game.player.inventory)}. Drop it first.`,
           currentItem: game.player.inventory,
-        });
+        };
       }
 
       game.player.pickup(collectible.type);
@@ -43,11 +43,11 @@ export function createPickupTool(game: Game): ModelContextTool {
       game.renderer.updateCollectibles(game.board);
       game.gameplayState?.updateInventory();
 
-      return JSON.stringify({
+      return {
         success: true,
         item: collectible.type,
         message: `Picked up: ${collectibleDisplayName(collectible.type)}`,
-      });
+      };
     },
   };
 }
