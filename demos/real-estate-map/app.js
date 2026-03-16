@@ -343,5 +343,19 @@ document.addEventListener('DOMContentLoaded', () => {
             mapContainer.classList.remove('hidden');
         });
     }
+
+    // Handle URL parameters for routing from landing page
+    const params = new URLSearchParams(window.location.search);
+    const locationQuery = params.get('location');
+    if (locationQuery) {
+        // Just for visual feedback since our mock data is statically Paris
+        setTimeout(() => {
+            window.realEstateApp.showAlert(`Showing matches for: ${locationQuery}`);
+            const resultsCountEl = document.getElementById('results-count');
+            if (resultsCountEl) {
+                resultsCountEl.innerText = `${mockProperties.length} Properties in ${locationQuery}`;
+            }
+        }, 1000);
+    }
 });
 

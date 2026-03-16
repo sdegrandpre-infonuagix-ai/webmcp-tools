@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Immobilier Paris - Map Search</title>
+    <title>Immobilier Paris - Find Your Dream Home</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -11,217 +11,85 @@
             theme: {
                 extend: {
                     colors: {
-                        primary: '#2563eb', // blue-600 (Fresher blue)
+                        primary: '#2563eb', // blue-600
                         secondary: '#475569', // slate-600
-                        accent: '#f97316', // orange-500
                     }
                 }
             }
         }
     </script>
-    <!-- noUiSlider CSS & JS -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.css" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.1/nouislider.min.js"></script>
     <!-- Google Material Icons -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <style>
         .material-symbols-outlined {
           font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
         }
-        /* Custom map info window adjustments */
-        .gm-style .gm-style-iw-c { padding: 0 !important; border-radius: 0.75rem !important; }
-        .gm-style .gm-style-iw-d { overflow: hidden !important; }
-        
-        /* Smooth fade up for listings */
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        .hero-bg {
+            background-image: linear-gradient(rgba(15, 23, 42, 0.6), rgba(15, 23, 42, 0.4)), url('https://images.unsplash.com/photo-1511739001486-6bfe10ce785f?auto=format&fit=crop&q=80&w=2000');
+            background-size: cover;
+            background-position: center;
         }
-        .listing-card { animation: fadeUp 0.3s ease-out forwards; }
-        
-        /* Scrollbar customization */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-        
-        /* noUiSlider Customization */
-        .noUi-target { background: #e2e8f0; border: none; box-shadow: none; height: 6px; }
-        .noUi-connect { background: #2563eb; }
-        .noUi-handle { width: 18px !important; height: 18px !important; right: -9px !important; top: -6px !important; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,0.3); border: 2px solid #fff; background: #2563eb; cursor: pointer; }
-        .noUi-handle::before, .noUi-handle::after { display: none; }
     </style>
 </head>
-<body class="flex flex-col md:flex-row h-screen font-sans text-slate-800 bg-slate-50 overflow-hidden">
+<body class="font-sans text-slate-800 bg-slate-50 antialiased h-screen flex flex-col">
 
-    <!-- Sidebar: Filters & List -->
-    <aside class="w-full md:w-[400px] lg:w-[450px] bg-white border-r border-slate-200 h-full flex flex-col z-10 shrink-0">
-        <!-- Header -->
-        <header class="p-4 border-b border-slate-200 flex items-center justify-between sticky top-0 bg-white z-20">
-            <div class="flex items-center gap-2 text-primary font-bold text-xl">
-                <span class="material-symbols-outlined text-2xl">apartment</span>
-                <span>ParisImmo</span>
-            </div>
-            <button id="mobile-map-toggle" class="md:hidden bg-slate-100 p-2 rounded-full text-slate-700 hover:bg-slate-200">
-                <span class="material-symbols-outlined">map</span>
-            </button>
-        </header>
+    <!-- Header -->
+    <header class="absolute top-0 w-full p-6 z-20 flex items-center justify-between pointer-events-none">
+        <div class="flex items-center gap-2 text-white font-bold text-2xl">
+            <span class="material-symbols-outlined text-3xl drop-shadow-md">apartment</span>
+            <span class="drop-shadow-md">ParisImmo</span>
+        </div>
+        <nav class="hidden md:flex items-center gap-6 font-semibold text-white/90 drop-shadow-md pointer-events-auto">
+            <a href="#" class="hover:text-white transition-colors">Buy</a>
+            <a href="#" class="hover:text-white transition-colors">Rent</a>
+            <a href="#" class="hover:text-white transition-colors">Sell</a>
+            <a href="#" class="px-5 py-2 rounded-full bg-primary hover:bg-white hover:text-primary transition-colors duration-300">Sign In</a>
+        </nav>
+    </header>
 
-        <!-- Filters Section -->
-        <div class="p-4 border-b border-slate-100 bg-slate-50 overflow-visible shrink-0">
-            <div class="flex justify-between items-center mb-3">
-                <h2 class="font-semibold text-slate-700">Filters</h2>
-                <button type="button" onclick="realEstateApp.clearFilters()" class="text-xs font-semibold hover:text-primary text-slate-500 transition-colors">Clear all</button>
-            </div>
-            
-            <form id="filter-form" class="space-y-4 text-sm" onchange="realEstateApp.applyFilters()">
-                <!-- Property Type -->
-                <div>
-                    <label class="block text-xs font-medium text-slate-500 mb-2">Property Type</label>
-                    <div class="flex gap-2">
-                        <label class="flex-1 cursor-pointer">
-                            <input type="checkbox" name="type" value="Apartment" class="hidden peer type-filter" checked onchange="realEstateApp.applyFilters()">
-                            <div class="text-center py-1 text-xs font-semibold text-slate-600 bg-white border border-slate-200 rounded-full hover:border-primary peer-checked:bg-primary peer-checked:text-white peer-checked:border-primary transition-all">Apartment</div>
-                        </label>
-                        <label class="flex-1 cursor-pointer">
-                            <input type="checkbox" name="type" value="House" class="hidden peer type-filter" checked onchange="realEstateApp.applyFilters()">
-                            <div class="text-center py-1 text-xs font-semibold text-slate-600 bg-white border border-slate-200 rounded-full hover:border-primary peer-checked:bg-primary peer-checked:text-white peer-checked:border-primary transition-all">House</div>
-                        </label>
-                        <label class="flex-1 cursor-pointer">
-                            <input type="checkbox" name="type" value="Studio" class="hidden peer type-filter" checked onchange="realEstateApp.applyFilters()">
-                            <div class="text-center py-1 text-xs font-semibold text-slate-600 bg-white border border-slate-200 rounded-full hover:border-primary peer-checked:bg-primary peer-checked:text-white peer-checked:border-primary transition-all">Studio</div>
-                        </label>
-                    </div>
-                </div>
+    <!-- Hero Section -->
+    <main class="flex-1 hero-bg flex items-center justify-center p-6 mt-0">
+        <div class="max-w-3xl w-full text-center fade-up">
+            <h1 class="text-4xl md:text-6xl font-extrabold text-white mb-6 drop-shadow-lg leading-tight">
+                Find your perfect home
+            </h1>
+            <p class="text-lg md:text-xl text-slate-200 mb-10 drop-shadow-md font-medium">
+                Search through our exclusive collection of luxury apartments, charming studios, and private houses.
+            </p>
 
-                <!-- Price & Area -->
-                <div class="grid grid-cols-1 gap-4">
-                    <div>
-                        <div class="flex justify-between items-center mb-4">
-                            <label class="block text-xs font-medium text-slate-500">Price Range: <span id="price-display-val" class="font-bold text-slate-700">Any</span></label>
-                        </div>
-                        <div class="px-2">
-                            <div id="price-slider"></div>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-slate-500 mb-1">Min Area (m²)</label>
-                        <input type="number" id="filter-minArea" placeholder="No min" class="w-full border border-slate-300 rounded px-2 py-1.5 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-shadow cursor-pointer" oninput="realEstateApp.debounceApplyFilters()">
-                    </div>
-                </div>
-
-                <!-- Bedrooms -->
-                <div>
-                    <label class="block text-xs font-medium text-slate-500 mb-2">Bedrooms</label>
-                    <div class="flex gap-2">
-                        <label class="flex-1 cursor-pointer">
-                            <input type="radio" name="minBedrooms" value="0" class="peer hidden bed-filter" checked onchange="realEstateApp.applyFilters()">
-                            <div class="text-center py-1 text-xs font-semibold text-slate-600 bg-white border border-slate-200 rounded hover:border-primary peer-checked:bg-primary peer-checked:text-white peer-checked:border-primary transition-all">Any</div>
-                        </label>
-                        <label class="flex-1 cursor-pointer">
-                            <input type="radio" name="minBedrooms" value="1" class="peer hidden bed-filter" onchange="realEstateApp.applyFilters()">
-                            <div class="text-center py-1 text-xs font-semibold text-slate-600 bg-white border border-slate-200 rounded hover:border-primary peer-checked:bg-primary peer-checked:text-white peer-checked:border-primary transition-all">1+</div>
-                        </label>
-                        <label class="flex-1 cursor-pointer">
-                            <input type="radio" name="minBedrooms" value="2" class="peer hidden bed-filter" onchange="realEstateApp.applyFilters()">
-                            <div class="text-center py-1 text-xs font-semibold text-slate-600 bg-white border border-slate-200 rounded hover:border-primary peer-checked:bg-primary peer-checked:text-white peer-checked:border-primary transition-all">2+</div>
-                        </label>
-                        <label class="flex-1 cursor-pointer">
-                            <input type="radio" name="minBedrooms" value="3" class="peer hidden bed-filter" onchange="realEstateApp.applyFilters()">
-                            <div class="text-center py-1 text-xs font-semibold text-slate-600 bg-white border border-slate-200 rounded hover:border-primary peer-checked:bg-primary peer-checked:text-white peer-checked:border-primary transition-all">3+</div>
-                        </label>
-                        <label class="flex-1 cursor-pointer">
-                            <input type="radio" name="minBedrooms" value="4" class="peer hidden bed-filter" onchange="realEstateApp.applyFilters()">
-                            <div class="text-center py-1 text-xs font-semibold text-slate-600 bg-white border border-slate-200 rounded hover:border-primary peer-checked:bg-primary peer-checked:text-white peer-checked:border-primary transition-all">4+</div>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Advanced Filters -->
-                <div id="advanced-filters" class="space-y-4 pt-2 border-t border-slate-200 mt-2">
-                    <!-- Energy Class -->
-                    <div>
-                        <label class="block text-xs font-medium text-slate-500 mb-1">Energy Class (DPE)</label>
-                        <div class="flex gap-1">
-                            <label class="flex-1 cursor-pointer"><input type="checkbox" value="A" class="peer hidden energy-filter"><div class="text-center py-1 text-xs font-bold text-white bg-green-600 rounded opacity-40 hover:opacity-80 peer-checked:opacity-100 transition-opacity">A</div></label>
-                            <label class="flex-1 cursor-pointer"><input type="checkbox" value="B" class="peer hidden energy-filter"><div class="text-center py-1 text-xs font-bold text-white bg-green-500 rounded opacity-40 hover:opacity-80 peer-checked:opacity-100 transition-opacity">B</div></label>
-                            <label class="flex-1 cursor-pointer"><input type="checkbox" value="C" class="peer hidden energy-filter"><div class="text-center py-1 text-xs font-bold text-white bg-lime-500 rounded opacity-40 hover:opacity-80 peer-checked:opacity-100 transition-opacity">C</div></label>
-                            <label class="flex-1 cursor-pointer"><input type="checkbox" value="D" class="peer hidden energy-filter"><div class="text-center py-1 text-xs font-bold text-white bg-yellow-400 rounded opacity-40 hover:opacity-80 peer-checked:opacity-100 transition-opacity">D</div></label>
-                            <label class="flex-1 cursor-pointer"><input type="checkbox" value="E" class="peer hidden energy-filter"><div class="text-center py-1 text-xs font-bold text-white bg-orange-400 rounded opacity-40 hover:opacity-80 peer-checked:opacity-100 transition-opacity">E</div></label>
-                            <label class="flex-1 cursor-pointer"><input type="checkbox" value="F" class="peer hidden energy-filter"><div class="text-center py-1 text-xs font-bold text-white bg-orange-600 rounded opacity-40 hover:opacity-80 peer-checked:opacity-100 transition-opacity">F</div></label>
-                            <label class="flex-1 cursor-pointer"><input type="checkbox" value="G" class="peer hidden energy-filter"><div class="text-center py-1 text-xs font-bold text-white bg-red-600 rounded opacity-40 hover:opacity-80 peer-checked:opacity-100 transition-opacity">G</div></label>
-                        </div>
-                    </div>
-                    
-                    <!-- Amenities -->
-                    <div>
-                        <label class="block text-xs font-medium text-slate-500 mb-2">Features</label>
-                        <div class="grid grid-cols-2 gap-3">
-                            <label class="flex items-center gap-2 cursor-pointer group">
-                                <input type="checkbox" value="Balcony" class="feature-filter cursor-pointer text-primary rounded border-slate-300 focus:ring-primary w-4 h-4">
-                                <span class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors text-[20px]">balcony</span>
-                                <span class="text-slate-600 group-hover:text-slate-900 transition-colors text-sm">Balcony</span>
-                            </label>
-                            <label class="flex items-center gap-2 cursor-pointer group">
-                                <input type="checkbox" value="Terrace" class="feature-filter cursor-pointer text-primary rounded border-slate-300 focus:ring-primary w-4 h-4">
-                                <span class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors text-[20px]">deck</span>
-                                <span class="text-slate-600 group-hover:text-slate-900 transition-colors text-sm">Terrace</span>
-                            </label>
-                            <label class="flex items-center gap-2 cursor-pointer group">
-                                <input type="checkbox" value="Elevator" class="feature-filter cursor-pointer text-primary rounded border-slate-300 focus:ring-primary w-4 h-4">
-                                <span class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors text-[20px]">elevator</span>
-                                <span class="text-slate-600 group-hover:text-slate-900 transition-colors text-sm">Elevator</span>
-                            </label>
-                            <label class="flex items-center gap-2 cursor-pointer group">
-                                <input type="checkbox" value="Parking" class="feature-filter cursor-pointer text-primary rounded border-slate-300 focus:ring-primary w-4 h-4">
-                                <span class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors text-[20px]">local_parking</span>
-                                <span class="text-slate-600 group-hover:text-slate-900 transition-colors text-sm">Parking</span>
-                            </label>
-                        </div>
-                    </div>
-                </div>
+            <!-- Declarative WebMCP Tool Form -->
+            <form id="search-form" 
+                  class="bg-white p-2 rounded-full shadow-2xl flex flex-col md:flex-row items-center gap-2 max-w-2xl mx-auto w-full relative"
+                  toolname="search_location" 
+                  tooldescription="Searches for real estate properties in a given city or neighborhood by navigating to the map view." 
+                  toolautosubmit 
+                  action="map.html" 
+                  method="GET">
+                
+                <span class="material-symbols-outlined text-slate-400 absolute left-6 md:static md:pl-4 text-2xl pointer-events-none">search</span>
+                
+                <input type="text" 
+                       name="location" 
+                       id="location-input"
+                       placeholder="Enter a city, neighborhood, or postal code (e.g., Paris)" 
+                       class="flex-1 w-full bg-transparent border-none focus:ring-0 outline-none px-12 md:px-2 py-4 text-slate-700 text-lg placeholder-slate-400 font-medium"
+                       required
+                       toolparamdescription="The city name, neighborhood, or postal code to search in (e.g., 'Paris').">
+                
+                <button type="submit" class="w-full md:w-auto bg-primary hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-full transition-colors flex items-center justify-center gap-2">
+                    <span>Search</span>
+                    <span class="material-symbols-outlined text-sm hidden md:inline">arrow_forward</span>
+                </button>
             </form>
-        </div>
-
-        <!-- Property List -->
-        <div class="p-4 bg-white border-b border-slate-100 flex items-center justify-between shrink-0">
-            <h3 class="font-bold text-lg" id="results-count">15 Properties</h3>
-            <div class="text-sm border border-slate-200 rounded px-2 py-1 flex items-center gap-1 cursor-pointer hover:bg-slate-50">
-                <span>Map view</span>
-                <span class="material-symbols-outlined text-sm">map</span>
-            </div>
-        </div>
-        <div id="listings-container" class="flex-1 overflow-y-auto p-4 space-y-5 bg-slate-50 pb-24 md:pb-4">
-            <!-- Listings will be injected here via JS -->
-        </div>
-    </aside>
-
-    <!-- Main Content: Map -->
-    <main class="flex-1 h-full relative z-0 md:block hidden" id="map-container">
-        <!-- Close map on mobile -->
-        <button id="close-map-btn" class="absolute top-4 left-4 z-10 bg-white p-2 rounded shadow-md md:hidden text-slate-700 flex items-center gap-1" onclick="document.getElementById('map-container').classList.add('hidden')">
-            <span class="material-symbols-outlined">arrow_back</span> Back to list
-        </button>
-        <div id="map" class="w-full h-full bg-slate-200">
-            <!-- Google Maps will attach here -->
-            <div class="flex items-center justify-center h-full flex-col text-slate-500">
-                <span class="material-symbols-outlined text-4xl mb-2 animate-pulse">location_on</span>
-                <p>Loading interactive map...</p>
-                <p class="text-xs mt-2 text-center max-w-xs">If this does not load, please ensure a valid Google Maps API Key has been provided in the source.</p>
+            
+            <div class="mt-8 flex items-center justify-center gap-6 text-sm font-medium text-white/80 drop-shadow-md">
+                <span>Popular:</span>
+                <a href="map.html?location=Le+Marais" class="hover:text-white hover:underline transition-all">Le Marais</a>
+                <a href="map.html?location=Montmartre" class="hover:text-white hover:underline transition-all">Montmartre</a>
+                <a href="map.html?location=Saint-Germain" class="hover:text-white hover:underline transition-all">Saint-Germain</a>
             </div>
         </div>
     </main>
 
-    <!-- Tooltip / Alert -->
-    <div id="alert-banner" class="fixed top-4 right-4 bg-slate-800 text-white px-4 py-3 rounded shadow-xl flex items-center gap-3 transform translate-y-[-150%] transition-transform duration-300 z-50">
-        <span class="material-symbols-outlined">info</span>
-        <span id="alert-text" class="text-sm font-medium">Action complete</span>
-    </div>
-
-    <script src="data.js"></script>
-    <script src="app.js"></script>
-    <script src="mcp.js"></script>
-    <!-- REPLACE 'YOUR_API_KEY_HERE' WITH A REAL KEY -->
-    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCeZb3NEYPn1L5R7w9659U9zJzKomLpbOI&callback=realEstateApp.initMap"></script>
 </body>
 </html>
