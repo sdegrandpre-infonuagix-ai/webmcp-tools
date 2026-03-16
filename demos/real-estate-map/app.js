@@ -128,7 +128,8 @@ window.realEstateApp = {
 
     renderListings: function(filteredProperties) {
         const container = document.getElementById('listings-container');
-        document.getElementById('results-count').innerText = `${filteredProperties.length} Properties`;
+        const countText = filteredProperties.length === 1 ? "1 Property" : `${filteredProperties.length} Properties`;
+        document.getElementById('results-count').innerText = countText;
         
         if (filteredProperties.length === 0) {
             container.innerHTML = `
@@ -351,7 +352,8 @@ document.addEventListener('DOMContentLoaded', () => {
             window.realEstateApp.showAlert(`Showing matches for: ${locationQuery}`);
             const resultsCountEl = document.getElementById('results-count');
             if (resultsCountEl) {
-                resultsCountEl.innerText = `${mockProperties.length} Properties in ${locationQuery}`;
+                const countText = mockProperties.length === 1 ? '1 Property' : `${mockProperties.length} Properties`;
+                resultsCountEl.innerText = `${countText} in ${locationQuery}`;
             }
         }, 1000);
     }
