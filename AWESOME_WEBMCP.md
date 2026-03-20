@@ -21,6 +21,8 @@ A curated list of awesome WebMCP demos.
   - **Example Prompts:** "Start a new game", then "Solve the maze"
 - [CineFlow](https://googlechromelabs.github.io/webmcp-tools/demos/ticket-booking/) - A movie ticket purchase flow where AI agents can update location, query movies by genre, and select showtimes to start a checkout process.
   - **Example Prompt:** "Find two tickets for a horror movie in Montpelier tonight"
+- [Order Tracking](https://googlechromelabs.github.io/webmcp-tools/demos/order-tracking/) - A simulated e-commerce order tracking and returns system allowing an AI agent to query order history and initiate returns via declarative tools.
+  - **Example Prompt:** "Where is my order from last week? If it’s delivered, I need to start a return."
 - [Shoe store](https://andreinwald.github.io/webmcp-demo/) | [Code](https://github.com/andreinwald/webmcp-demo) - online store built with React, with all core functionality MCP-ready.
   - **Example Prompt:** "Suggest the 3 best pairs of soccer shoes (foot size 45) available on this site. Add (one of suggestions) to cart and complete purchase."
 - [Flight booking](https://webmcp-flight-demo.netlify.app/) / [Flight booking (declarative)](https://webmcp-flight-demo.netlify.app/declarative.html) - Find the best flights for your journey.
