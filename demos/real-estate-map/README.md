@@ -47,5 +47,24 @@ When an AI agent is active, it can:
 5. Use the search bar to search for a location (e.g., "Seattle").
 6. The map will pan to the location and display properties.
 7. Use the filters manually to filter the properties.
-8. Via WebMCP (e.g. the extension), you can also filter the properties by using the `apply_smart_filters` tool. Prompt to try: "Search for flats with at least 2 bedrooms and a balcony, max price 9000"
-9. The UI updates dynamically and seamlessly syncs with based on tool calls.
+8. Via WebMCP (e.g. the extension), you can command an AI agent to execute tasks natively on your behalf.
+
+## 🤖 Prompting the Agent
+
+Once you have a valid WebMCP client connected to the page, try these natural language prompts to see the agent interact with the map dynamically:
+
+### Search & Filtering (`apply_smart_filters`)
+Try these elaborate searches—our 63-property mock dataset guarantees you'll find intersecting results:
+- *"Find me a pet-friendly apartment in Austin with Central AC and under $1,000,000."*
+- *"Show me houses in Miami with a Swimming Pool and Garage Parking, ideally 3+ bedrooms."*
+- *"Look for luxury condos in Seattle with a Rooftop Deck and a Water View, max price $2.5M."*
+
+### Property Details (`view_property_details`)
+Once you have results on the screen, ask the agent to inspect a specific property card:
+- *"Open the details for property ID 12."*
+- *"Show me more information about the first listing in the sidebar."*
+
+### Resetting State (`clear_filters`)
+Whenever you want to start over, simply tell the agent:
+- *"Reset all my search filters."*
+- *"Clear the current map filters and show me everything available."*
