@@ -285,10 +285,12 @@
             
             // For convenience, if the user explicitly provided it in the URL, allow it.
             if (savedGoogleMapsApiKey) {
-                const backLink = document.querySelector('a[href="index.html"]');
-                if (backLink) {
-                    backLink.href = `index.html?key=${savedGoogleMapsApiKey}`;
-                }
+                document.querySelectorAll('a').forEach(a => {
+                    const href = a.getAttribute('href');
+                    if (href === 'index.html' || href === './index.html' || href === '/') {
+                        a.href = `index.html?key=${savedGoogleMapsApiKey}`;
+                    }
+                });
                 loadGoogleMaps(savedGoogleMapsApiKey);
             } else {
                 // Show error message if no key provided

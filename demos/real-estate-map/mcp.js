@@ -51,13 +51,20 @@ if (modelContext) {
                 // Update Location
                 if (params.location) {
                     const l = params.location.toLowerCase();
-                    if (l.includes('austin')) window.realEstateApp.currentCity = 'Austin';
-                    else if (l.includes('miami')) window.realEstateApp.currentCity = 'Miami';
-                    else window.realEstateApp.currentCity = 'Seattle';
+                    let centerCoords;
                     
-                    let centerCoords = { lat: 47.6062, lng: -122.3321 };
-                    if (window.realEstateApp.currentCity === 'Austin') centerCoords = { lat: 30.2672, lng: -97.7431 };
-                    else if (window.realEstateApp.currentCity === 'Miami') centerCoords = { lat: 25.7617, lng: -80.1918 };
+                    if (l.includes('austin')) {
+                        window.realEstateApp.currentCity = 'Austin';
+                        centerCoords = { lat: 30.2672, lng: -97.7431 };
+                    } else if (l.includes('miami')) {
+                        window.realEstateApp.currentCity = 'Miami';
+                        centerCoords = { lat: 25.7617, lng: -80.1918 };
+                    } else if (l.includes('seattle')) {
+                        window.realEstateApp.currentCity = 'Seattle';
+                        centerCoords = { lat: 47.6062, lng: -122.3321 };
+                    } else {
+                        return `Error: Location '${params.location}' is not available.`;
+                    }
                     
                     window.realEstateApp.map.panTo(centerCoords);
                     window.realEstateApp.map.setZoom(12);

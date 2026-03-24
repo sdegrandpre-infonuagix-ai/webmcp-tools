@@ -9,15 +9,23 @@ window.realEstateApp = {
         const urlParams = new URLSearchParams(window.location.search);
         const urlLocation = (urlParams.get('location') || '').toLowerCase();
         
-        let centerCoords = { lat: 47.6062, lng: -122.3321 }; // Seattle
-        this.currentCity = "Seattle";
+        let centerCoords = { lat: 47.6062, lng: -122.3321 }; // Seattle default
+        this.currentCity = "Seattle"; // Seattle default
         
-        if (urlLocation.includes('austin')) {
-            centerCoords = { lat: 30.2672, lng: -97.7431 };
-            this.currentCity = "Austin";
-        } else if (urlLocation.includes('miami')) {
-            centerCoords = { lat: 25.7617, lng: -80.1918 };
-            this.currentCity = "Miami";
+        if (urlLocation) {
+            if (urlLocation.includes('austin')) {
+                centerCoords = { lat: 30.2672, lng: -97.7431 };
+                this.currentCity = "Austin";
+            } else if (urlLocation.includes('miami')) {
+                centerCoords = { lat: 25.7617, lng: -80.1918 };
+                this.currentCity = "Miami";
+            } else if (urlLocation.includes('seattle')) {
+                centerCoords = { lat: 47.6062, lng: -122.3321 };
+                this.currentCity = "Seattle";
+            } else {
+                console.error(`Location '${urlLocation}' is not available.`);
+                setTimeout(() => this.showAlert(`Error: Location '${urlParams.get('location')}' is not available. Showing Seattle.`), 500);
+            }
         }
 
         // Ensure google maps is loaded
