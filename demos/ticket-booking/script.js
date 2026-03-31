@@ -3,11 +3,30 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { movies } from './movies.js';
+import { movies as baseMovies } from './movies.js';
+
+function getISODate(date) {
+  return date.toISOString().split('T')[0];
+}
+
+const today = new Date();
+const movies = baseMovies.map((movie) => {
+  const showtimes = [];
+  for (let i = 0; i < 14; i++) {
+    const date = new Date(today);
+    date.setDate(today.getDate() + i);
+    showtimes.push({
+      date: getISODate(date),
+      times: movie.showtimes,
+    });
+  }
+  return { ...movie, showtimes };
+});
 
 let currentCity = '';
 let currentGenre = 'all';
 let pendingShowtime = null;
+let currentSelectedDate = getISODate(today);
 
 // Elements
 const movieGrid = document.getElementById('movie-grid');
@@ -128,22 +147,50 @@ function renderMovieDetails(id) {
     `Playing in: ${movie.locations.join(', ')}`;
   document.getElementById('detail-poster').src = movie.poster;
 
+  const dateSelector = document.getElementById('date-selector');
+  dateSelector.innerHTML = '';
+  movie.showtimes.forEach((day) => {
+    const btn = document.createElement('button');
+    btn.className = `w-16 flex-shrink-0 snap-start flex flex-col items-center justify-center py-2 rounded-xl transition ${
+      currentSelectedDate === day.date
+        ? 'bg-blue-600 text-white shadow-lg'
+        : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+    }`;
+    const dateObj = new Date(day.date + 'T00:00:00');
+    const weekday = dateObj.toLocaleDateString(undefined, { weekday: 'short' });
+    const month = dateObj.toLocaleDateString(undefined, { month: 'short' });
+    const dateNum = dateObj.toLocaleDateString(undefined, { day: 'numeric' });
+
+    btn.innerHTML = `<span class="text-xs font-normal uppercase tracking-wider">${weekday}</span><span class="text-lg font-bold leading-none my-1">${dateNum}</span><span class="text-xs font-normal">${month}</span>`;
+
+    btn.onclick = () => {
+      currentSelectedDate = day.date;
+      renderMovieDetails(id);
+    };
+    dateSelector.appendChild(btn);
+  });
+
   const showtimeList = document.getElementById('showtime-list');
   showtimeList.innerHTML = '';
 
-  movie.showtimes.forEach((time) => {
+  const selectedDay =
+    movie.showtimes.find((d) => d.date === currentSelectedDate) || movie.showtimes[0];
+
+  selectedDay.times.forEach((time) => {
     const btn = document.createElement('button');
     btn.className = 'px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 font-medium transition';
     btn.textContent = time;
-    btn.onclick = () => initiateCheckout(time);
+    btn.onclick = () => initiateCheckout(currentSelectedDate, time);
     showtimeList.appendChild(btn);
   });
 
   document.getElementById('checkout-section').classList.add('hidden');
 
   if (pendingShowtime) {
-    initiateCheckout(pendingShowtime);
+    currentSelectedDate = pendingShowtime.date;
+    initiateCheckout(pendingShowtime.date, pendingShowtime.time);
     pendingShowtime = null;
+    renderMovieDetails(id); // Re-render to show correct date selected
   }
 }
 
@@ -151,10 +198,16 @@ function showMovieDetails(id) {
   window.location.hash = `movie/${id}`;
 }
 
-function initiateCheckout(time) {
+function initiateCheckout(date, time) {
   document.getElementById('checkout-section').classList.remove('hidden');
-  document.getElementById('checkout-time').textContent = time;
-  showToast(`Checkout started for ${time}`);
+  const dateObj = new Date(date + 'T00:00:00');
+  const label = dateObj.toLocaleDateString(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  });
+  document.getElementById('checkout-time').textContent = `${label} at ${time}`;
+  showToast(`Checkout started for ${label} at ${time}`);
 }
 
 // Event Listeners
@@ -282,6 +335,11 @@ if (navigator.modelContext) {
           type: 'string',
           description: 'The ID of the movie to select.',
         },
+        date: {
+          type: 'string',
+          description: `The date of the show in YYYY-MM-DD format (e.g., '${getISODate(today)}').`,
+          pattern: '^\\d{4}-\\d{2}-\\d{2}$',
+        },
         time: {
           type: 'string',
           description: "The start time of the show in 12-hour format with AM/PM (e.g., '8:30 PM').",
@@ -293,28 +351,35 @@ if (navigator.modelContext) {
           default: 1,
         },
       },
-      required: ['movie_id', 'time'],
+      required: ['movie_id', 'date', 'time'],
     },
-    execute: ({ movie_id, time }) => {
+    execute: ({ movie_id, date, time }) => {
       const movie = movies.find((m) => m.id === movie_id);
       if (!movie) {
         return { status: 'error', message: `Invalid movie_id value (${movie_id})` };
       }
 
-      if (!movie.showtimes.includes(time)) {
-        return { status: 'error', message: `Invalid time value (${time})` };
+      const day = movie.showtimes.find((d) => d.date === date);
+      if (!day) {
+        return { status: 'error', message: `Invalid date value (${date})` };
+      }
+
+      if (!day.times.includes(time)) {
+        return { status: 'error', message: `Invalid time value (${time} on ${date})` };
       }
 
       if (window.location.hash === `#movie/${movie_id}`) {
-        initiateCheckout(time);
+        currentSelectedDate = date;
+        initiateCheckout(date, time);
+        renderMovieDetails(movie_id); // Update date selector UI
       } else {
-        pendingShowtime = time;
+        pendingShowtime = { date, time };
         showMovieDetails(movie_id);
       }
 
       return {
         status: 'success',
-        message: `Selected showtime ${time} for "${movie.title}" movie. You can now proceed to checkout.`,
+        message: `Selected showtime ${time} on ${date} for "${movie.title}" movie. You can now proceed to checkout.`,
       };
     },
   });
