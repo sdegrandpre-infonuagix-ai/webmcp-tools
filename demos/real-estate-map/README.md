@@ -53,6 +53,12 @@ When an AI agent is active, it can:
 
 Once you have a valid WebMCP client connected to the page, try these natural language prompts to see the agent interact with the map dynamically:
 
+### Search
+
+Try a simple search to start, or a multi-step query:
+- *"Find me an apartment in Austin"*
+- Followed by: *"Filter for those with AC and under $1,000,000."*
+
 ### Search & Filtering (`apply_smart_filters`)
 Try these elaborate searches—our 63-property mock dataset guarantees you'll find intersecting results:
 - *"Find me a pet-friendly apartment in Austin with Central AC and under $1,000,000."*

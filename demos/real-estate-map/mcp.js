@@ -1,3 +1,8 @@
+/**
+ * Copyright 2026 Google LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 // Register WebMCP Tools natively
 const modelContext = navigator.modelContext;
 if (modelContext) {
