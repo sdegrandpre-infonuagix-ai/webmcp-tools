@@ -78,7 +78,53 @@ function collectReservationRecord() {
   };
 }
 
-form.addEventListener('submit', async function (e) {
+/** Build a stable, human-readable confirmation code from the IndexedDB row id. */
+function formatConfirmationNumber(id) {
+  if (!Number.isFinite(id)) return null;
+  return `LPB-${String(id).padStart(6, '0')}`;
+}
+
+/**
+ * Structured tool output returned to a WebMCP agent on a successful booking.
+ * Contains a human message plus all reservation details so an agent can read
+ * any field without re-parsing free text.
+ */
+function buildToolResult({ reservationId, record }) {
+  const dateObj = parseISODateAsLocal(record.date);
+  const dateLong = dateObj
+    ? dateObj.toLocaleDateString('en-US', {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+      })
+    : record.date;
+
+  const confirmationNumber = formatConfirmationNumber(reservationId);
+
+  return {
+    status: 'confirmed',
+    confirmationNumber,
+    reservationId: reservationId ?? null,
+    reservation: {
+      name: record.name,
+      phone: record.phone,
+      date: record.date,
+      dateFormatted: dateLong,
+      time: record.time,
+      guests: Number(record.guests),
+      guestsLabel: record.guestsLabel,
+      seating: record.seating,
+      seatingLabel: record.seatingLabel,
+      requests: record.requests || null,
+    },
+    message: confirmationNumber
+      ? `Reservation ${confirmationNumber} confirmed for ${record.name} on ${dateLong} at ${record.time} (${record.guestsLabel} · ${record.seatingLabel}).`
+      : `Reservation confirmed for ${record.name} on ${dateLong} at ${record.time} (${record.guestsLabel} · ${record.seatingLabel}).`,
+  };
+}
+
+form.addEventListener('submit', function (e) {
   e.preventDefault();
 
   validateForm();
@@ -90,41 +136,47 @@ form.addEventListener('submit', async function (e) {
     return;
   }
 
-  try {
-    await addReservation(collectReservationRecord());
-  } catch (err) {
-    console.error('IndexedDB save failed', err);
-  }
+  // WebMCP requires e.respondWith() to be called synchronously inside the
+  // event handler; we can pass it a Promise that resolves to the final
+  // tool output (similar to FetchEvent.respondWith).
+  const record = collectReservationRecord();
+  const resultPromise = (async () => {
+    let reservationId = null;
+    try {
+      reservationId = await addReservation(record);
+    } catch (err) {
+      console.error('IndexedDB save failed', err);
+    }
+    const toolResult = buildToolResult({ reservationId, record });
 
-  if (isCrossDocument) {
-    const qs = new URLSearchParams(new FormData(form)).toString();
-    window.location.assign(`./result.html?${qs}`);
-    return;
-  }
+    if (isCrossDocument) {
+      const qs = new URLSearchParams(new FormData(form));
+      if (toolResult.confirmationNumber) {
+        qs.set('confirmation', toolResult.confirmationNumber);
+      }
+      window.location.assign(`./result.html?${qs.toString()}`);
+    } else {
+      showModal(toolResult);
+    }
 
-  showModal();
+    return toolResult;
+  })();
 
   if (e.agentInvoked) {
-    e.respondWith(modalDetails.textContent);
+    e.respondWith(resultPromise);
   }
+
+  resultPromise.catch((err) => console.error('Reservation flow failed', err));
 });
 
-function showModal() {
-  const name = document.getElementById('name').value;
-  const time = document.getElementById('time').value;
-  const guests = document.querySelector('#guests option:checked').textContent;
-  const seating = document.querySelector('#seating option:checked').textContent;
+function showModal(toolResult) {
+  const { reservation, confirmationNumber } = toolResult;
 
-  const dateObj = parseISODateAsLocal(document.getElementById('date').value);
-  const dateStr = dateObj
-    ? dateObj.toLocaleDateString('en-US', {
-        weekday: 'long',
-        month: 'long',
-        day: 'numeric',
-      })
+  const confirmationLine = confirmationNumber
+    ? `<div class="confirmation-number">Confirmation #${confirmationNumber}</div>`
     : '';
 
-  modalDetails.innerHTML = `Hello <strong>${name}</strong>,<br> We look forward to welcoming you on:<br><br> <strong>${dateStr}</strong> at <strong>${time}</strong><br> Party of <strong>${guests}</strong> &bull; ${seating}`;
+  modalDetails.innerHTML = `${confirmationLine}<div class="modal-greeting">Hello <strong>${reservation.name}</strong>,</div> We look forward to welcoming you on:<br><br> <strong>${reservation.dateFormatted}</strong> at <strong>${reservation.time}</strong><br> Party of <strong>${reservation.guestsLabel}</strong> &bull; ${reservation.seatingLabel}`;
   dialog.showModal();
 }
 
@@ -241,18 +293,20 @@ async function renderReservationsList() {
   }
 
   reservationsList.innerHTML = rows
-    .map(
-      (row) => `
+    .map((row) => {
+      const conf = formatConfirmationNumber(row.id);
+      return `
     <article class="reservation-card" data-id="${row.id}">
       <div class="reservation-card-body">
+        ${conf ? `<span class="reservation-confirmation">#${escapeHtml(conf)}</span>` : ''}
         <strong>${escapeHtml(row.name)}</strong>
         <span class="reservation-meta">${escapeHtml(formatReservationDate(row.date))} · ${escapeHtml(row.time)}</span>
         <span class="reservation-meta">${escapeHtml(row.guestsLabel)} · ${escapeHtml(row.seatingLabel)}</span>
         ${row.requests ? `<span class="reservation-note">${escapeHtml(row.requests)}</span>` : ''}
       </div>
       <button type="button" class="delete-reservation-btn" data-id="${row.id}" aria-label="Delete reservation">×</button>
-    </article>`
-    )
+    </article>`;
+    })
     .join('');
 
   reservationsList.querySelectorAll('.delete-reservation-btn').forEach((btn) => {

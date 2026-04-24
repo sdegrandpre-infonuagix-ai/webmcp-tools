@@ -350,6 +350,25 @@ dialog::backdrop {
   color: #444;
 }
 
+.confirmation-number {
+  font-family: 'Segoe UI', sans-serif;
+  font-size: 0.75em;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--dark-gold);
+  background: rgba(212, 175, 55, 0.12);
+  border: 1px solid var(--gold);
+  padding: 6px 10px;
+  margin-bottom: 14px;
+  display: inline-block;
+  border-radius: 2px;
+}
+
+.modal-greeting {
+  margin-bottom: 6px;
+}
+
 .modal-details strong {
   color: var(--black);
   font-weight: 700;
@@ -417,6 +436,22 @@ dialog::backdrop {
   flex-direction: column;
   gap: 4px;
   min-width: 0;
+}
+
+.reservation-confirmation {
+  display: inline-block;
+  font-family: 'Segoe UI', sans-serif;
+  font-size: 0.7em;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--dark-gold);
+  background: rgba(212, 175, 55, 0.12);
+  border: 1px solid var(--gold);
+  padding: 2px 8px;
+  border-radius: 2px;
+  margin-bottom: 4px;
+  width: fit-content;
 }
 
 .reservation-meta {

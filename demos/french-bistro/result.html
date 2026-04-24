@@ -14,7 +14,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap"
     rel="stylesheet" />
 
-  <script type="application/ld+json">
+  <script type="application/ld+json" id="toolResult">
     {
       "@context": "https://schema.org",
       "@type": "Message",
@@ -45,6 +45,7 @@
     const guests = params.get('guests');
     const seating = params.get('seating');
     const dateRaw = params.get('date');
+    const confirmation = params.get('confirmation');
     const dateParsed = parseISODateAsLocal(dateRaw);
     const dateStr = dateParsed
       ? dateParsed.toLocaleDateString('en-US', {
@@ -53,13 +54,25 @@
           day: 'numeric',
         })
       : dateRaw;
-    modalDetails.innerHTML = `Hello <strong>${name}</strong>,<br> We look forward to welcoming you on:<br><br> <strong>${dateStr}</strong> at <strong>${time}</strong><br> Party of <strong>${guests}</strong> &bull; ${seating}`;
 
-    const jsonLd = document.querySelector('script[type="application/ld+json"]');
+    const confirmationLine = confirmation
+      ? `<div class="confirmation-number">Confirmation #${confirmation}</div>`
+      : '';
+    modalDetails.innerHTML = `${confirmationLine}<div class="modal-greeting">Hello <strong>${name}</strong>,</div> We look forward to welcoming you on:<br><br> <strong>${dateStr}</strong> at <strong>${time}</strong><br> Party of <strong>${guests}</strong> &bull; ${seating}`;
+
+    const jsonLd = document.getElementById('toolResult');
     if (jsonLd) {
-      const data = JSON.parse(jsonLd.textContent);
-      data.text = modalDetails.innerText;
-      jsonLd.textContent = JSON.stringify(data);
+      jsonLd.textContent = JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'Reservation',
+        reservationStatus: 'https://schema.org/ReservationConfirmed',
+        reservationNumber: confirmation || null,
+        underName: name,
+        startTime: dateRaw && time ? `${dateRaw}T${time}` : null,
+        partySize: guests ? Number(guests) : null,
+        seating: seating || null,
+        text: modalDetails.innerText,
+      });
     }
 
     document.getElementById('closeDialogBtn').addEventListener('click', () => {
