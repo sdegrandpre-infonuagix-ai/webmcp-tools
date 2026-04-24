@@ -33,13 +33,26 @@
     <button class="close-modal-btn" id="closeDialogBtn">Close Window</button>
   </dialog>
   <script>
+    function parseISODateAsLocal(ymd) {
+      if (!ymd || !/^\d{4}-\d{2}-\d{2}$/.test(ymd)) return null;
+      const parts = ymd.split('-').map(Number);
+      return new Date(parts[0], parts[1] - 1, parts[2]);
+    }
     const params = new URLSearchParams(window.location.search);
     const modalDetails = document.getElementById('modalDetails');
     const name = params.get('name');
     const time = params.get('time');
     const guests = params.get('guests');
     const seating = params.get('seating');
-    const dateStr = params.get('date');
+    const dateRaw = params.get('date');
+    const dateParsed = parseISODateAsLocal(dateRaw);
+    const dateStr = dateParsed
+      ? dateParsed.toLocaleDateString('en-US', {
+          weekday: 'long',
+          month: 'long',
+          day: 'numeric',
+        })
+      : dateRaw;
     modalDetails.innerHTML = `Hello <strong>${name}</strong>,<br> We look forward to welcoming you on:<br><br> <strong>${dateStr}</strong> at <strong>${time}</strong><br> Party of <strong>${guests}</strong> &bull; ${seating}`;
 
     const jsonLd = document.querySelector('script[type="application/ld+json"]');

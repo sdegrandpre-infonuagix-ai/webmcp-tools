@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { addReservation, deleteReservation, getAllReservations } from './reservation-db.js';
+
 const form = document.getElementById('reservationForm');
 const dialog = document.getElementById('bookingDialog');
 const closeBtn = document.getElementById('closeDialogBtn');
@@ -44,11 +46,39 @@ if (params.has('norequiredname')) {
 
 let formValidationErrors = []; // Array to collect validation error messages to send back to the Agent.
 
-const dateInput = document.getElementById('date');
-const today = new Date().toISOString().split('T')[0];
-dateInput.setAttribute('min', today);
+/** HTML date value (YYYY-MM-DD) as a local calendar Date (avoids UTC parse shift). */
+function parseISODateAsLocal(ymd) {
+  if (!ymd || !/^\d{4}-\d{2}-\d{2}$/.test(ymd)) return null;
+  const [y, m, d] = ymd.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
 
-form.addEventListener('submit', function (e) {
+/** Today's calendar date in local timezone as YYYY-MM-DD for <input type="date" min>. */
+function localTodayISODate() {
+  const n = new Date();
+  const mo = String(n.getMonth() + 1).padStart(2, '0');
+  const da = String(n.getDate()).padStart(2, '0');
+  return `${n.getFullYear()}-${mo}-${da}`;
+}
+
+const dateInput = document.getElementById('date');
+dateInput.setAttribute('min', localTodayISODate());
+
+function collectReservationRecord() {
+  return {
+    name: document.getElementById('name').value.trim(),
+    phone: document.getElementById('phone').value,
+    date: document.getElementById('date').value,
+    time: document.getElementById('time').value,
+    guests: document.getElementById('guests').value,
+    guestsLabel: document.querySelector('#guests option:checked').textContent,
+    seating: document.getElementById('seating').value,
+    seatingLabel: document.querySelector('#seating option:checked').textContent,
+    requests: document.getElementById('requests').value.trim(),
+  };
+}
+
+form.addEventListener('submit', async function (e) {
   e.preventDefault();
 
   validateForm();
@@ -60,8 +90,15 @@ form.addEventListener('submit', function (e) {
     return;
   }
 
+  try {
+    await addReservation(collectReservationRecord());
+  } catch (err) {
+    console.error('IndexedDB save failed', err);
+  }
+
   if (isCrossDocument) {
-    form.submit();
+    const qs = new URLSearchParams(new FormData(form)).toString();
+    window.location.assign(`./result.html?${qs}`);
     return;
   }
 
@@ -78,12 +115,14 @@ function showModal() {
   const guests = document.querySelector('#guests option:checked').textContent;
   const seating = document.querySelector('#seating option:checked').textContent;
 
-  const dateObj = new Date(document.getElementById('date').value);
-  const dateStr = dateObj.toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-  });
+  const dateObj = parseISODateAsLocal(document.getElementById('date').value);
+  const dateStr = dateObj
+    ? dateObj.toLocaleDateString('en-US', {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+      })
+    : '';
 
   modalDetails.innerHTML = `Hello <strong>${name}</strong>,<br> We look forward to welcoming you on:<br><br> <strong>${dateStr}</strong> at <strong>${time}</strong><br> Party of <strong>${guests}</strong> &bull; ${seating}`;
   dialog.showModal();
@@ -144,10 +183,13 @@ function validateForm() {
   const digitsOnly = phoneInput.value.replace(/\D/g, '');
   validateField(phoneInput, digitsOnly.length >= 10);
 
-  const inputDate = new Date(dateInput.value);
+  const inputDate = parseISODateAsLocal(dateInput.value);
   const currentDate = new Date();
   currentDate.setHours(0, 0, 0, 0);
-  validateField(dateInput, dateInput.value !== '' && inputDate >= currentDate);
+  validateField(
+    dateInput,
+    dateInput.value !== '' && inputDate !== null && inputDate >= currentDate
+  );
 
   const timeInput = document.getElementById('time');
   validateField(timeInput, timeInput.value !== '');
@@ -162,4 +204,93 @@ function validateForm() {
 window.addEventListener('toolactivated', ({ toolName }) => {
   if (toolName !== 'book_table_le_petit_bistro') return;
   validateForm();
+});
+
+const reservationsDialog = document.getElementById('reservationsDialog');
+const reservationsList = document.getElementById('reservationsList');
+const openReservationsBtn = document.getElementById('openReservationsBtn');
+const closeReservationsBtn = document.getElementById('closeReservationsBtn');
+
+function formatReservationDate(isoDate) {
+  if (!isoDate) return '';
+  const dateObj = parseISODateAsLocal(isoDate);
+  if (!dateObj) return String(isoDate);
+  return dateObj.toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
+
+async function renderReservationsList() {
+  let rows;
+  try {
+    rows = await getAllReservations();
+  } catch (err) {
+    console.error('IndexedDB read failed', err);
+    reservationsList.innerHTML =
+      '<p class="reservations-empty">Could not read saved reservations.</p>';
+    return;
+  }
+
+  if (!rows.length) {
+    reservationsList.innerHTML =
+      '<p class="reservations-empty">No reservations yet. Submit the form to save one here.</p>';
+    return;
+  }
+
+  reservationsList.innerHTML = rows
+    .map(
+      (row) => `
+    <article class="reservation-card" data-id="${row.id}">
+      <div class="reservation-card-body">
+        <strong>${escapeHtml(row.name)}</strong>
+        <span class="reservation-meta">${escapeHtml(formatReservationDate(row.date))} · ${escapeHtml(row.time)}</span>
+        <span class="reservation-meta">${escapeHtml(row.guestsLabel)} · ${escapeHtml(row.seatingLabel)}</span>
+        ${row.requests ? `<span class="reservation-note">${escapeHtml(row.requests)}</span>` : ''}
+      </div>
+      <button type="button" class="delete-reservation-btn" data-id="${row.id}" aria-label="Delete reservation">×</button>
+    </article>`
+    )
+    .join('');
+
+  reservationsList.querySelectorAll('.delete-reservation-btn').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const id = Number(btn.getAttribute('data-id'));
+      try {
+        await deleteReservation(id);
+      } catch (err) {
+        console.error('IndexedDB delete failed', err);
+      }
+      await renderReservationsList();
+    });
+  });
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text == null ? '' : String(text);
+  return div.innerHTML;
+}
+
+openReservationsBtn.addEventListener('click', async () => {
+  await renderReservationsList();
+  reservationsDialog.showModal();
+});
+
+closeReservationsBtn.addEventListener('click', () => {
+  reservationsDialog.close();
+});
+
+reservationsDialog.addEventListener('click', (e) => {
+  const rect = reservationsDialog.getBoundingClientRect();
+  if (
+    e.clientY < rect.top ||
+    e.clientY > rect.bottom ||
+    e.clientX < rect.left ||
+    e.clientX > rect.right
+  ) {
+    reservationsDialog.close();
+  }
 });

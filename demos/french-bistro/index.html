@@ -31,6 +31,9 @@
     <main class="booking-container">
       <h2>Le Petit Bistro</h2>
       <span class="subtitle">Table Reservations</span>
+      <button type="button" class="saved-reservations-btn" id="openReservationsBtn">
+        Saved reservations
+      </button>
 
       <form
         id="reservationForm"
@@ -142,6 +145,15 @@
       <div class="modal-details" id="modalDetails"></div>
 
       <button class="close-modal-btn" id="closeDialogBtn">Close Window</button>
+    </dialog>
+
+    <dialog id="reservationsDialog" class="reservations-dialog">
+      <h3 class="modal-title">Saved in this browser</h3>
+      <p class="reservations-hint">
+        Reservations are stored locally with IndexedDB; clearing site data removes them.
+      </p>
+      <div id="reservationsList" class="reservations-list"></div>
+      <button type="button" class="close-modal-btn" id="closeReservationsBtn">Close</button>
     </dialog>
     <script type="module" src="script.js"></script>
   </body>
